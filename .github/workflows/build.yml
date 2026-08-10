@@ -119,8 +119,8 @@ jobs:
             echo "::error::APK is signed with the Android Debug certificate. Amazon will reject it."
             exit 1
           fi
-          APK_SHA=$(grep -i "V2 Signer: certificate SHA-256 digest:" sig.txt | head -1 | sed 's/.*digest: //' | tr 'a-f' 'A-F')
-          KS_SHA=$(keytool -list -v -keystore android/app/release.jks -alias "$KEY_ALIAS" -storepass "$STORE_PASS" | grep -i "SHA256:" | head -1 | sed 's/.*SHA256: *//' | tr -d ' ' | tr 'a-f' 'A-F')
+          APK_SHA=$(grep -i "V2 Signer: certificate SHA-256 digest:" sig.txt | head -1 | sed 's/.*digest: *//' | tr -d ' :' | tr 'a-f' 'A-F')
+          KS_SHA=$(keytool -list -v -keystore android/app/release.jks -alias "$KEY_ALIAS" -storepass "$STORE_PASS" | grep -i "SHA256:" | head -1 | sed 's/.*SHA256: *//' | tr -d ' :' | tr 'a-f' 'A-F')
           echo "APK cert SHA-256:      $APK_SHA"
           echo "Keystore cert SHA-256: $KS_SHA"
           if [ "$APK_SHA" != "$KS_SHA" ]; then
