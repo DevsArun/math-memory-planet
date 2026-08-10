@@ -1,0 +1,10 @@
+.dart_tool/
+build/
+android/
+*.jks
+key.properties
+.idea/
+*.iml
+.vscode/
+.DS_Store
+shell_tmp/
