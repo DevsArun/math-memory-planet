@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'assets.dart';
 import 'game_shell.dart';
 import 'models.dart';
+import 'onboarding.dart';
 import 'parent_screens.dart';
 import 'sfx.dart';
 import 'state.dart';
@@ -35,7 +37,7 @@ class MMPApp extends StatelessWidget {
             ),
             useMaterial3: true,
           ),
-          home: const HomeScreen(),
+          home: appState.onboardingDone ? const HomeScreen() : const OnboardingScreen(),
         );
       },
     );
@@ -55,39 +57,96 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<int> daily = dailyLevelFor(DateTime.now());
+    final ModeInfo dailyMode = kModes[daily[0]];
     return GradientScaffold(
       child: Column(
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Row(
               children: <Widget>[
+                const Mascot(size: 58),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        S.t('appTitle'),
-                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: AppColors.white),
+                        appState.childName.isEmpty ? S.t('appTitle') : '${S.t('hi')}, ${appState.childName}!',
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.white),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         S.t('choosePlanet'),
-                        style: TextStyle(fontSize: 15, color: AppColors.white.withValues(alpha: 0.8)),
+                        style: TextStyle(fontSize: 14, color: AppColors.white.withValues(alpha: 0.8)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                ChipPill(emoji: '🔥', text: '${appState.streak}'),
-                const SizedBox(width: 8),
-                ChipPill(emoji: '⭐', text: '${appState.totalStars}'),
-                const SizedBox(width: 8),
                 _RoundIconButton(
                   icon: Icons.settings_rounded,
                   onTap: () => _openSettings(context),
                 ),
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Row(
+              children: <Widget>[
+                ChipPill(emoji: '🔥', text: '${appState.streak}'),
+                const SizedBox(width: 8),
+                ChipPill(emoji: '⭐', text: '${appState.totalStars}'),
+                const SizedBox(width: 8),
+                ChipPill(emoji: '🏅', text: '${appState.badges.length}/${AppState.badgeDefs.length}'),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: ChunkyButton(
+              color: AppColors.lavender,
+              minHeight: 64,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => GameScreen(modeIndex: daily[0], levelIndex: daily[1]),
+                  ),
+                );
+              },
+              child: Row(
+                children: <Widget>[
+                  const Text('☄️', style: TextStyle(fontSize: 30)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          S.t('daily'),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.textDark),
+                        ),
+                        Text(
+                          '${dailyMode.emoji} ${S.t(dailyMode.titleKey)} • ${S.t('level')} ${daily[1] + 1}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark.withValues(alpha: 0.7),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.play_arrow_rounded, color: AppColors.textDark, size: 34),
+                ],
+              ),
             ),
           ),
           Expanded(
@@ -178,10 +237,12 @@ class ModeCard extends StatelessWidget {
             width: 84,
             height: 84,
             decoration: BoxDecoration(
-              color: Color(mode.color).withValues(alpha: 0.2),
+              color: Color(mode.color).withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: Center(child: Text(mode.emoji, style: const TextStyle(fontSize: 44))),
+            child: Center(
+              child: Image.asset(A.planet(modeIndex), width: 76, height: 76),
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(

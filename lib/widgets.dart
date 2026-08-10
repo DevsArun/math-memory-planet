@@ -3,30 +3,178 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'assets.dart';
 import 'sfx.dart';
 import 'state.dart';
 import 'theme.dart';
 
-/// Gradient background scaffold themed by the selected reward theme.
+/// Themed space background: gradient + nebula art + twinkling stars.
 class GradientScaffold extends StatelessWidget {
-  const GradientScaffold({super.key, required this.child});
+  const GradientScaffold({super.key, required this.child, this.resizeToAvoidBottomInset = false});
 
   final Widget child;
+  final bool resizeToAvoidBottomInset;
 
   @override
   Widget build(BuildContext context) {
     final List<int> t = AppState.themes[appState.theme];
     return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: <Color>[Color(t[0]), Color(t[1])],
+      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+      body: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[Color(t[0]), Color(t[1])],
+                ),
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(child: child),
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.55,
+              child: Image.asset(A.nebula, fit: BoxFit.cover),
+            ),
+          ),
+          const Positioned.fill(child: IgnorePointer(child: Starfield())),
+          SafeArea(child: child),
+        ],
+      ),
+    );
+  }
+}
+
+/// Subtle animated twinkling star layer. Pure CustomPaint, no plugin.
+class Starfield extends StatefulWidget {
+  const Starfield({super.key});
+
+  @override
+  State<Starfield> createState() => _StarfieldState();
+}
+
+class _Star {
+  const _Star(this.x, this.y, this.r, this.phase);
+
+  final double x;
+  final double y;
+  final double r;
+  final double phase;
+}
+
+class _StarfieldState extends State<Starfield> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 5),
+  )..repeat();
+
+  late final List<_Star> _stars = _makeStars();
+
+  static List<_Star> _makeStars() {
+    final math.Random rng = math.Random(3);
+    return List<_Star>.generate(
+      46,
+      (_) => _Star(rng.nextDouble(), rng.nextDouble(), 0.8 + rng.nextDouble() * 1.8, rng.nextDouble() * 6.28),
+    );
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (BuildContext context, Widget? child) {
+        return CustomPaint(
+          painter: _StarPainter(_stars, _c.value),
+          child: const SizedBox.expand(),
+        );
+      },
+    );
+  }
+}
+
+class _StarPainter extends CustomPainter {
+  const _StarPainter(this.stars, this.progress);
+
+  final List<_Star> stars;
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint();
+    for (final _Star s in stars) {
+      final double tw = 0.25 + 0.75 * (0.5 + 0.5 * math.sin(6.283 * progress + s.phase));
+      paint.color = Colors.white.withValues(alpha: tw * 0.75);
+      canvas.drawCircle(Offset(s.x * size.width, s.y * size.height), s.r, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_StarPainter oldDelegate) => true;
+}
+
+/// Nova, the floating alien mascot.
+class Mascot extends StatefulWidget {
+  const Mascot({super.key, this.size = 88});
+
+  final double size;
+
+  @override
+  State<Mascot> createState() => _MascotState();
+}
+
+class _MascotState extends State<Mascot> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (BuildContext context, Widget? child) {
+        return Transform.translate(offset: Offset(0, -6 * _c.value), child: child);
+      },
+      child: Image.asset(A.mascot, width: widget.size, height: widget.size),
+    );
+  }
+}
+
+/// Small speech-bubble style card (used for hints and mascot talk).
+class Bubble extends StatelessWidget {
+  const Bubble({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.cardFace,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: <BoxShadow>[
+          BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 3)),
+        ],
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
       ),
     );
   }

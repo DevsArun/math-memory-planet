@@ -24,6 +24,7 @@ class _FlipMatchGameState extends State<FlipMatchGame> {
   int? _first;
   int _mistakes = 0;
   int _moves = 0;
+  int _combo = 0;
   bool _busy = false;
 
   void _tap(int i) {
@@ -40,7 +41,8 @@ class _FlipMatchGameState extends State<FlipMatchGame> {
     _first = null;
     _moves++;
     if (widget.level.cards[first].pairId == widget.level.cards[i].pairId) {
-      Sfx.play('match');
+      _combo++;
+      Sfx.play(_combo >= 2 ? 'combo' : 'match');
       setState(() {
         _matched[first] = true;
         _matched[i] = true;
@@ -56,6 +58,7 @@ class _FlipMatchGameState extends State<FlipMatchGame> {
     } else {
       _busy = true;
       _mistakes++;
+      _combo = 0;
       Sfx.play('wrong');
       Future<void>.delayed(const Duration(milliseconds: 750), () {
         if (!mounted) {
@@ -84,6 +87,7 @@ class _FlipMatchGameState extends State<FlipMatchGame> {
               if (level.target > 0) ChipPill(emoji: '🎯', text: '${S.t('target')}: ${level.target}'),
               ChipPill(emoji: '❌', text: '${S.t('mistakes')}: $_mistakes'),
               ChipPill(emoji: '👆', text: '${S.t('moves')}: $_moves'),
+              if (_combo >= 2) ChipPill(emoji: '🔥', text: '${S.t('combo')} x$_combo'),
             ],
           ),
         ),

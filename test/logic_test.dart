@@ -123,5 +123,17 @@ void main() {
         }
       }
     });
+
+    test('daily challenge: deterministic and in range', () {
+      final DateTime d = DateTime(2026, 8, 11);
+      expect(dailyLevelFor(d).join(','), dailyLevelFor(d).join(','));
+      final List<int> v = dailyLevelFor(d);
+      expect(v[0] >= 0 && v[0] < kModes.length, isTrue);
+      expect(v[1] >= 0 && v[1] < 30, isTrue);
+      expect(
+        dailyLevelFor(d.add(const Duration(days: 1))).join(',') == dailyLevelFor(d).join(','),
+        isFalse,
+      );
+    });
   });
 }

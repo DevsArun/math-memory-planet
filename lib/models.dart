@@ -293,3 +293,9 @@ Level buildLevel(GameMode mode, int index) {
       );
   }
 }
+
+/// Today's daily challenge (deterministic worldwide): [modeIndex, levelIndex].
+List<int> dailyLevelFor(DateTime now) {
+  final int doy = now.difference(DateTime(now.year, 1, 1)).inDays;
+  return <int>[doy % kModes.length, (doy ~/ kModes.length) % 30];
+}

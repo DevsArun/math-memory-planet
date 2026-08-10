@@ -459,6 +459,46 @@ class StatsScreen extends StatelessWidget {
   }
 }
 
+class _BadgeTile extends StatelessWidget {
+  const _BadgeTile({required this.def, required this.unlocked});
+
+  final BadgeDef def;
+  final bool unlocked;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: unlocked ? AppColors.cardFace : AppColors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: unlocked ? AppColors.sunYellow : AppColors.white.withValues(alpha: 0.2),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Text(def.emoji, style: const TextStyle(fontSize: 30)),
+          const SizedBox(height: 4),
+          Text(
+            S.t(def.nameKey),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: unlocked ? AppColors.textDark : AppColors.white.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RewardOption extends StatelessWidget {
   const _RewardOption({
     required this.locked,
@@ -527,6 +567,21 @@ class RewardsScreen extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: ChipPill(emoji: '⭐', text: '$total'),
+                    ),
+                    SectionTitle(text: S.t('trophies')),
+                    GridView(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 150,
+                        childAspectRatio: 1.12,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                      ),
+                      children: <Widget>[
+                        for (final BadgeDef def in AppState.badgeDefs)
+                          _BadgeTile(def: def, unlocked: appState.badges.contains(def.key)),
+                      ],
                     ),
                     SectionTitle(text: S.t('cardBacks')),
                     GridView(

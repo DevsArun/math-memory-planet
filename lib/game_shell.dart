@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'game_builder.dart';
 import 'game_flip.dart';
@@ -14,15 +16,21 @@ import 'strings.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Grid of 30 levels for one mode (planet).
+/// Winding galaxy-path level map (Candy-Crush style) for one mode.
 class LevelSelectScreen extends StatelessWidget {
   const LevelSelectScreen({super.key, required this.modeIndex});
 
   final int modeIndex;
 
+  static const double _spacing = 112;
+
   @override
   Widget build(BuildContext context) {
     final ModeInfo mode = kModes[modeIndex];
+    int current = 0;
+    while (current < 29 && appState.starsFor(modeIndex, current) > 0) {
+      current++;
+    }
     return GradientScaffold(
       child: Column(
         children: <Widget>[
@@ -58,70 +66,197 @@ class LevelSelectScreen extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: GridView(
-              padding: const EdgeInsets.all(14),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 120,
-                childAspectRatio: 0.92,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-              ),
-              children: <Widget>[
-                for (int level = 0; level < 30; level++)
-                  _LevelCell(modeIndex: modeIndex, level: level, color: Color(mode.color)),
-              ],
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints c) {
+                const double spacing = _spacing;
+                final double height = 30 * spacing + 140;
+                return SingleChildScrollView(
+                  padding: EdgeInsets.zero,
+                  child: SizedBox(
+                    width: c.maxWidth,
+                    height: height,
+                    child: Stack(
+                      children: <Widget>[
+                        Positioned.fill(
+                          child: CustomPaint(painter: _PathPainter(c.maxWidth, spacing, height)),
+                        ),
+                        for (int level = 0; level < 30; level++)
+                          _buildNode(context, mode, level, current, c.maxWidth, spacing, height),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildNode(
+    BuildContext context,
+    ModeInfo mode,
+    int level,
+    int current,
+    double width,
+    double spacing,
+    double height,
+  ) {
+    final Offset pos = _nodePos(width, spacing, level, height);
+    final bool unlocked = appState.levelUnlocked(modeIndex, level);
+    return Positioned(
+      left: pos.dx - 36,
+      top: pos.dy - 45,
+      child: _LevelNode(
+        number: level + 1,
+        stars: appState.starsFor(modeIndex, level),
+        unlocked: unlocked,
+        isCurrent: unlocked && level == current,
+        color: Color(mode.color),
+        onTap: () {
+          if (unlocked) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => GameScreen(modeIndex: modeIndex, levelIndex: level)),
+            );
+          } else {
+            Sfx.play('wrong');
+          }
+        },
+      ),
+    );
+  }
 }
 
-class _LevelCell extends StatelessWidget {
-  const _LevelCell({required this.modeIndex, required this.level, required this.color});
+Offset _nodePos(double width, double spacing, int i, double height) {
+  final double x = width / 2 + math.sin(i * 0.85) * (width * 0.26);
+  final double y = height - 90 - i * spacing;
+  return Offset(x, y);
+}
 
-  final int modeIndex;
-  final int level;
+class _PathPainter extends CustomPainter {
+  const _PathPainter(this.width, this.spacing, this.height);
+
+  final double width;
+  final double spacing;
+  final double height;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.18)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round;
+    final Path path = Path();
+    for (int i = 0; i < 30; i++) {
+      final Offset p = _nodePos(width, spacing, i, height);
+      if (i == 0) {
+        path.moveTo(p.dx, p.dy);
+      } else {
+        path.lineTo(p.dx, p.dy);
+      }
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_PathPainter oldDelegate) => false;
+}
+
+class _LevelNode extends StatefulWidget {
+  const _LevelNode({
+    required this.number,
+    required this.stars,
+    required this.unlocked,
+    required this.isCurrent,
+    required this.color,
+    required this.onTap,
+  });
+
+  final int number;
+  final int stars;
+  final bool unlocked;
+  final bool isCurrent;
   final Color color;
+  final VoidCallback onTap;
+
+  @override
+  State<_LevelNode> createState() => _LevelNodeState();
+}
+
+class _LevelNodeState extends State<_LevelNode> with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isCurrent) {
+      _pulse.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool unlocked = appState.levelUnlocked(modeIndex, level);
-    final int stars = appState.starsFor(modeIndex, level);
-    return ChunkyButton(
-      color: unlocked ? AppColors.cardFace : AppColors.white.withValues(alpha: 0.14),
-      minHeight: 0,
-      padding: const EdgeInsets.all(8),
-      radius: 20,
+    final Widget circle = Container(
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+        color: widget.unlocked ? AppColors.cardFace : AppColors.white.withValues(alpha: 0.16),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: widget.unlocked ? widget.color : AppColors.white.withValues(alpha: 0.3),
+          width: 4,
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Center(
+        child: widget.unlocked
+            ? Text(
+                '${widget.number}',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: widget.color),
+              )
+            : Icon(Icons.lock_rounded, color: AppColors.white.withValues(alpha: 0.55), size: 28),
+      ),
+    );
+    return GestureDetector(
       onTap: () {
-        if (unlocked) {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => GameScreen(modeIndex: modeIndex, levelIndex: level)),
-          );
-        } else {
-          Sfx.play('wrong');
-        }
+        HapticFeedback.lightImpact();
+        widget.onTap();
       },
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (unlocked)
-            Text(
-              '${level + 1}',
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: color),
+          if (widget.isCurrent)
+            AnimatedBuilder(
+              animation: _pulse,
+              builder: (BuildContext context, Widget? child) {
+                return Transform.scale(scale: 1 + 0.08 * _pulse.value, child: child);
+              },
+              child: circle,
             )
           else
-            Icon(Icons.lock_rounded, color: AppColors.white.withValues(alpha: 0.5), size: 26),
-          const SizedBox(height: 4),
-          StarBar(stars: stars, size: 16),
+            circle,
+          const SizedBox(height: 3),
+          StarBar(stars: widget.stars, size: 14),
         ],
       ),
     );
   }
 }
 
-/// Hosts one level: header + the mode-specific game widget + win flow.
+/// Hosts one level: header + level-start splash + game widget + win flow.
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key, required this.modeIndex, required this.levelIndex});
 
@@ -136,11 +271,26 @@ class _GameScreenState extends State<GameScreen> {
   int _replayCount = 0;
   late DateTime _start;
   bool _won = false;
+  bool _started = false;
 
   @override
   void initState() {
     super.initState();
     _start = DateTime.now();
+    _armSplash();
+  }
+
+  void _armSplash() {
+    Future<void>.delayed(const Duration(milliseconds: 1100), () {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _started = true;
+        _start = DateTime.now();
+      });
+      Sfx.play('levelstart');
+    });
   }
 
   Level get _level => buildLevel(kModes[widget.modeIndex].mode, widget.levelIndex);
@@ -153,7 +303,7 @@ class _GameScreenState extends State<GameScreen> {
     final int seconds = DateTime.now().difference(_start).inSeconds;
     final Level level = _level;
     final int stars = mistakes <= level.par3 ? 3 : (mistakes <= level.par2 ? 2 : 1);
-    appState.completeLevel(
+    final List<String> fresh = appState.completeLevel(
       widget.modeIndex,
       widget.levelIndex,
       stars,
@@ -166,17 +316,18 @@ class _GameScreenState extends State<GameScreen> {
       if (!mounted) {
         return;
       }
-      _showWin(stars);
+      _showWin(stars, fresh);
     });
   }
 
-  void _showWin(int stars) {
+  void _showWin(int stars, List<String> fresh) {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) => WinDialog(
         stars: stars,
         hasNext: widget.levelIndex < 29,
+        newBadges: fresh,
         onNext: () {
           Navigator.of(dialogContext).pop();
           Navigator.of(context).pushReplacement(
@@ -253,9 +404,45 @@ class _GameScreenState extends State<GameScreen> {
             ),
           ),
           Expanded(
-            child: KeyedSubtree(
-              key: ValueKey<int>(_replayCount),
-              child: _buildGame(mode, level),
+            child: Stack(
+              children: <Widget>[
+                if (_started)
+                  KeyedSubtree(
+                    key: ValueKey<int>(_replayCount),
+                    child: _buildGame(mode, level),
+                  )
+                else
+                  const SizedBox.shrink(),
+                if (!_started)
+                  Positioned.fill(
+                    child: Container(
+                      color: Color(AppState.themes[appState.theme][1]),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Mascot(size: 110),
+                            const SizedBox(height: 14),
+                            Text(
+                              '${S.t('level')} ${widget.levelIndex + 1}',
+                              style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: AppColors.white),
+                            ),
+                            const SizedBox(height: 10),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 32),
+                              child: Bubble(text: S.t(mode.hintKey)),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              S.t('ready'),
+                              style: TextStyle(fontSize: 18, color: AppColors.white.withValues(alpha: 0.75)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -264,12 +451,13 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
-/// Celebration dialog with animated stars and confetti.
+/// Celebration dialog: mascot, rotating rays, animated stars, confetti, badges.
 class WinDialog extends StatefulWidget {
   const WinDialog({
     super.key,
     required this.stars,
     required this.hasNext,
+    required this.newBadges,
     required this.onNext,
     required this.onReplay,
     required this.onHome,
@@ -277,6 +465,7 @@ class WinDialog extends StatefulWidget {
 
   final int stars;
   final bool hasNext;
+  final List<String> newBadges;
   final VoidCallback onNext;
   final VoidCallback onReplay;
   final VoidCallback onHome;
@@ -291,9 +480,23 @@ class _WinDialogState extends State<WinDialog> with SingleTickerProviderStateMix
     duration: const Duration(milliseconds: 1200),
   )..forward();
 
+  late final AnimationController _spin = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 8),
+  )..repeat();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.newBadges.isNotEmpty) {
+      Sfx.play('trophy');
+    }
+  }
+
   @override
   void dispose() {
     _pop.dispose();
+    _spin.dispose();
     super.dispose();
   }
 
@@ -306,6 +509,16 @@ class _WinDialogState extends State<WinDialog> with SingleTickerProviderStateMix
         alignment: Alignment.center,
         children: <Widget>[
           const Positioned.fill(child: ConfettiOverlay()),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _spin,
+                builder: (BuildContext context, Widget? child) {
+                  return CustomPaint(painter: _RaysPainter(_spin.value), child: const SizedBox.expand());
+                },
+              ),
+            ),
+          ),
           Container(
             constraints: const BoxConstraints(maxWidth: 430),
             padding: const EdgeInsets.all(24),
@@ -319,11 +532,13 @@ class _WinDialogState extends State<WinDialog> with SingleTickerProviderStateMix
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                const Mascot(size: 92),
+                const SizedBox(height: 6),
                 Text(
                   S.t('wellDone'),
                   style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: AppColors.textDark),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
@@ -331,7 +546,19 @@ class _WinDialogState extends State<WinDialog> with SingleTickerProviderStateMix
                       _AnimatedStar(filled: i < widget.stars, delay: 0.12 * i + 0.1, animation: _pop),
                   ],
                 ),
-                const SizedBox(height: 20),
+                if (widget.newBadges.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 10),
+                  Text(
+                    '🏅 ${S.t('newBadge')}!',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.coral),
+                  ),
+                  for (final String k in widget.newBadges)
+                    Text(
+                      '${AppState.badgeDef(k).emoji} ${S.t(AppState.badgeDef(k).nameKey)}',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                    ),
+                ],
+                const SizedBox(height: 18),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
@@ -351,6 +578,29 @@ class _WinDialogState extends State<WinDialog> with SingleTickerProviderStateMix
       ),
     );
   }
+}
+
+class _RaysPainter extends CustomPainter {
+  const _RaysPainter(this.t);
+
+  final double t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()..color = AppColors.sunYellow.withValues(alpha: 0.10);
+    final Offset c = size.center(Offset.zero);
+    final double radius = size.width > size.height ? size.width : size.height;
+    for (int i = 0; i < 12; i++) {
+      canvas.save();
+      canvas.translate(c.dx, c.dy);
+      canvas.rotate(t * 6.283 + i * 0.5236);
+      canvas.drawRect(Rect.fromLTWH(radius * 0.18, -radius * 0.045, radius, radius * 0.09), paint);
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RaysPainter oldDelegate) => true;
 }
 
 class _AnimatedStar extends StatelessWidget {

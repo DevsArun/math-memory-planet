@@ -1,10 +1,21 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Shown in the About dialog. Keep in sync with pubspec.yaml version.
-const String kAppVersion = '1.0.1+2';
+import 'models.dart';
 
-/// Global app state: progress, stars, streak, cosmetics, settings, stats.
+/// Shown in the About dialog. Keep in sync with pubspec.yaml version.
+const String kAppVersion = '1.1.0+3';
+
+/// A collectible trophy badge.
+class BadgeDef {
+  const BadgeDef(this.key, this.emoji, this.nameKey);
+
+  final String key;
+  final String emoji;
+  final String nameKey;
+}
+
+/// Global app state: progress, stars, streak, badges, cosmetics, settings, stats.
 /// Persisted locally with shared_preferences only. Nothing ever leaves the device.
 class AppState extends ChangeNotifier {
   static const List<List<int>> cardBacks = <List<int>>[
@@ -29,6 +40,20 @@ class AppState extends ChangeNotifier {
   static const List<String> confettiEmojis = <String>['🎊', '⚪', '⭐'];
   static const List<int> confettiCost = <int>[0, 60, 100];
 
+  static const List<BadgeDef> badgeDefs = <BadgeDef>[
+    BadgeDef('first_win', '🏅', 'b_first_win'),
+    BadgeDef('ten_levels', '🌟', 'b_ten_levels'),
+    BadgeDef('perfect', '💯', 'b_perfect'),
+    BadgeDef('all_planets', '🪐', 'b_all_planets'),
+    BadgeDef('streak_7', '🔥', 'b_streak_7'),
+    BadgeDef('stars_100', '⭐', 'b_stars_100'),
+    BadgeDef('planet_master', '👑', 'b_planet_master'),
+    BadgeDef('daily_comet', '☄️', 'b_daily'),
+  ];
+
+  static BadgeDef badgeDef(String key) =>
+      badgeDefs.firstWhere((BadgeDef d) => d.key == key);
+
   late SharedPreferences _p;
 
   bool muted = false;
@@ -42,9 +67,12 @@ class AppState extends ChangeNotifier {
   int totalMoves = 0;
   int totalMistakes = 0;
   int totalSeconds = 0;
+  String childName = '';
+  bool onboardingDone = false;
 
   final Map<String, int> stars = <String, int>{};
   final Map<int, int> modePlays = <int, int>{};
+  final Set<String> badges = <String>{};
 
   Future<void> load() async {
     _p = await SharedPreferences.getInstance();
@@ -59,6 +87,9 @@ class AppState extends ChangeNotifier {
     totalMoves = _p.getInt('totalMoves') ?? 0;
     totalMistakes = _p.getInt('totalMistakes') ?? 0;
     totalSeconds = _p.getInt('totalSeconds') ?? 0;
+    childName = _p.getString('childName') ?? '';
+    onboardingDone = _p.getBool('onboardingDone') ?? false;
+    badges.addAll(_p.getStringList('badges') ?? <String>[]);
     for (final String key in _p.getKeys()) {
       if (key.startsWith('s_')) {
         stars[key.substring(2)] = _p.getInt(key) ?? 0;
@@ -88,7 +119,8 @@ class AppState extends ChangeNotifier {
   bool levelUnlocked(int mode, int level) =>
       level == 0 || starsFor(mode, level - 1) > 0;
 
-  void completeLevel(
+  /// Records a completed level. Returns newly unlocked badge keys.
+  List<String> completeLevel(
     int mode,
     int level,
     int starCount, {
@@ -106,8 +138,47 @@ class AppState extends ChangeNotifier {
     totalSeconds += seconds;
     modePlays[mode] = (modePlays[mode] ?? 0) + 1;
     _tickStreak();
+    final List<String> fresh = _evalBadges(mode, level, mistakes);
+    badges.addAll(fresh);
     _save();
     notifyListeners();
+    return fresh;
+  }
+
+  List<String> _evalBadges(int mode, int level, int mistakes) {
+    final List<String> fresh = <String>[];
+    void give(String k) {
+      if (!badges.contains(k)) {
+        fresh.add(k);
+      }
+    }
+
+    if (levelsCompleted >= 1) {
+      give('first_win');
+    }
+    if (levelsCompleted >= 10) {
+      give('ten_levels');
+    }
+    if (mistakes == 0) {
+      give('perfect');
+    }
+    if (modePlays.length >= kModes.length) {
+      give('all_planets');
+    }
+    if (streak >= 7) {
+      give('streak_7');
+    }
+    if (totalStars >= 100) {
+      give('stars_100');
+    }
+    if (starsForMode(mode) >= 90) {
+      give('planet_master');
+    }
+    final List<int> d = dailyLevelFor(DateTime.now());
+    if (mode == d[0] && level == d[1]) {
+      give('daily_comet');
+    }
+    return fresh;
   }
 
   void _tickStreak() {
@@ -123,6 +194,14 @@ class AppState extends ChangeNotifier {
 
   static String _day(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  void completeOnboarding(String name) {
+    childName = name.trim();
+    onboardingDone = true;
+    _p.setString('childName', childName);
+    _p.setBool('onboardingDone', true);
+    notifyListeners();
+  }
 
   void setMuted(bool value) {
     muted = value;
@@ -157,6 +236,7 @@ class AppState extends ChangeNotifier {
   void resetAll() {
     stars.clear();
     modePlays.clear();
+    badges.clear();
     streak = 0;
     lastDay = '';
     gamesPlayed = 0;
@@ -167,7 +247,7 @@ class AppState extends ChangeNotifier {
     theme = 0;
     confetti = 0;
     for (final String key in _p.getKeys().toList()) {
-      if (key != 'muted' && key != 'locale') {
+      if (key != 'muted' && key != 'locale' && key != 'childName' && key != 'onboardingDone') {
         _p.remove(key);
       }
     }
@@ -185,6 +265,7 @@ class AppState extends ChangeNotifier {
     _p.setInt('totalMoves', totalMoves);
     _p.setInt('totalMistakes', totalMistakes);
     _p.setInt('totalSeconds', totalSeconds);
+    _p.setStringList('badges', badges.toList());
     stars.forEach((String key, int value) {
       _p.setInt('s_$key', value);
     });
