@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Shown in the About dialog. Keep in sync with pubspec.yaml version.
-const String kAppVersion = '1.0.0+1';
+const String kAppVersion = '1.0.1+2';
 
 /// Global app state: progress, stars, streak, cosmetics, settings, stats.
 /// Persisted locally with shared_preferences only. Nothing ever leaves the device.
