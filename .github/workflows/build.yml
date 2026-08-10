@@ -1,0 +1,157 @@
+name: build-apk
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter 3.29.0 (pinned)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.29.0"
+          channel: stable
+          cache: true
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Show preinstalled Android SDK bits
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "--- platforms:"
+          ls "$ANDROID_HOME/platforms" || true
+          echo "--- build-tools:"
+          ls "$ANDROID_HOME/build-tools" || true
+          echo "--- ndk:"
+          ls "$ANDROID_HOME/ndk" || true
+          echo "--- cmdline-tools:"
+          ls "$ANDROID_HOME/cmdline-tools" || true
+
+      - name: Install Android SDK 36 + pinned NDK (verbose, no hiding)
+        run: |
+          SDK="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDK" ]; then
+            SDK=$(find "$ANDROID_HOME" -name sdkmanager -type f 2>/dev/null | head -1)
+          fi
+          echo "Using sdkmanager: $SDK"
+          "$SDK" --version
+          yes | "$SDK" --licenses > /dev/null 2>&1 || true
+          "$SDK" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358"
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: flutter analyze (blocking)
+        run: flutter analyze
+
+      - name: flutter test (blocking)
+        run: flutter test
+
+      - name: Generate android shell (throwaway dir, copy only android/)
+        run: |
+          flutter create --org com.itschool --project-name mathmemoryplanet --platforms android --template app shell_tmp
+          cp -r shell_tmp/android ./android
+          rm -rf shell_tmp
+
+      - name: Apply android config (gradle, icons, label, properties append)
+        run: |
+          cp ci/android/app.build.gradle.kts android/app/build.gradle.kts
+          cp ci/android/proguard-rules.pro android/app/proguard-rules.pro
+          cat ci/android/gradle.properties.append >> android/gradle.properties
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
+          cp -r icon_res/. android/app/src/main/res/
+          sed -i 's/android:label="[^"]*"/android:label="Math Memory Planet"/' android/app/src/main/AndroidManifest.xml
+
+      - name: Write signing files from secrets (fail fast if missing)
+        env:
+          KS_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+        run: |
+          if [ -z "$KS_B64" ] || [ -z "$STORE_PASS" ] || [ -z "$KEY_PASS" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::Signing secrets missing! Add the 4 GitHub Secrets first (see SIGNING.md / signing-kit ZIP)."
+            exit 1
+          fi
+          echo "$KS_B64" | base64 -d > android/app/release.jks
+          {
+            echo "storePassword=$STORE_PASS"
+            echo "keyPassword=$KEY_PASS"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "storeFile=release.jks"
+          } > android/key.properties
+
+      - name: Build debug APK (Appetize testing only)
+        run: flutter build apk --debug
+
+      - name: Build signed release APK (Amazon upload)
+        run: flutter build apk --release
+
+      - name: Verify release signature (hard-fail on debug cert)
+        env:
+          STORE_PASS: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+        run: |
+          set -e
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          "$ANDROID_HOME/build-tools/$BT/apksigner" verify --verbose --print-certs "$APK" | tee sig.txt
+          if grep -q "Android Debug" sig.txt; then
+            echo "::error::APK is signed with the Android Debug certificate. Amazon will reject it."
+            exit 1
+          fi
+          APK_SHA=$(grep -i "V2 Signer: certificate SHA-256 digest:" sig.txt | head -1 | sed 's/.*digest: //' | tr 'a-f' 'A-F')
+          KS_SHA=$(keytool -list -v -keystore android/app/release.jks -alias "$KEY_ALIAS" -storepass "$STORE_PASS" | grep -i "SHA256:" | head -1 | sed 's/.*SHA256: *//' | tr -d ' ' | tr 'a-f' 'A-F')
+          echo "APK cert SHA-256:      $APK_SHA"
+          echo "Keystore cert SHA-256: $KS_SHA"
+          if [ "$APK_SHA" != "$KS_SHA" ]; then
+            echo "::error::APK certificate does not match the release keystore!"
+            exit 1
+          fi
+          echo "APK_SHA=$APK_SHA" >> "$GITHUB_ENV"
+
+      - name: Artifact - AMAZON-UPLOAD-signed-release
+        uses: actions/upload-artifact@v4
+        with:
+          name: AMAZON-UPLOAD-signed-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Artifact - APPETIZE-ONLY-debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: APPETIZE-ONLY-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## 🪐 Math Memory Planet build"
+            echo ""
+            echo "- Version: $(grep '^version:' pubspec.yaml | awk '{print $2}')"
+            echo "- Release cert SHA-256: ${APK_SHA:-not built (check failed steps)}"
+            echo ""
+            echo "### Kya upload karna hai"
+            echo "- Amazon Appstore -> sirf **AMAZON-UPLOAD-signed-release** (app-release.apk)"
+            echo "- Appetize / local testing -> **APPETIZE-ONLY-debug** (app-debug.apk)"
+            echo "- Debug APK ko Amazon par KABHI upload mat karo!"
+          } >> "$GITHUB_STEP_SUMMARY"
