@@ -39,6 +39,7 @@ class GradientScaffold extends StatelessWidget {
               child: Image.asset(A.nebula, fit: BoxFit.cover),
             ),
           ),
+          const Positioned.fill(child: IgnorePointer(child: BgDrifters())),
           const Positioned.fill(child: IgnorePointer(child: Starfield())),
           SafeArea(child: child),
         ],
@@ -56,13 +57,16 @@ class Starfield extends StatefulWidget {
 }
 
 class _Star {
-  const _Star(this.x, this.y, this.r, this.phase);
+  const _Star(this.x, this.y, this.r, this.phase, this.ci);
 
   final double x;
   final double y;
   final double r;
   final double phase;
+  final int ci;
 }
+
+const List<int> _starColors = <int>[0xFFFFD233, 0xFFFF6B6B, 0xFF4ECDC4, 0xFF45B7FF, 0xFFFF8ED4, 0xFFB9A7F9];
 
 class _StarfieldState extends State<Starfield> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
@@ -76,7 +80,7 @@ class _StarfieldState extends State<Starfield> with SingleTickerProviderStateMix
     final math.Random rng = math.Random(3);
     return List<_Star>.generate(
       46,
-      (_) => _Star(rng.nextDouble(), rng.nextDouble(), 0.8 + rng.nextDouble() * 1.8, rng.nextDouble() * 6.28),
+      (_) => _Star(rng.nextDouble(), rng.nextDouble(), 0.8 + rng.nextDouble() * 1.8, rng.nextDouble() * 6.28, rng.nextInt(6)),
     );
   }
 
@@ -111,7 +115,7 @@ class _StarPainter extends CustomPainter {
     final Paint paint = Paint();
     for (final _Star s in stars) {
       final double tw = 0.25 + 0.75 * (0.5 + 0.5 * math.sin(6.283 * progress + s.phase));
-      paint.color = Colors.white.withValues(alpha: tw * 0.75);
+      paint.color = Color(_starColors[s.ci]).withValues(alpha: tw * 0.55);
       canvas.drawCircle(Offset(s.x * size.width, s.y * size.height), s.r, paint);
     }
   }
@@ -265,7 +269,7 @@ class ChipPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.16),
+        color: AppColors.textDark.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -275,7 +279,7 @@ class ChipPill extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             text,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.white),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
           ),
         ],
       ),
@@ -294,7 +298,7 @@ class SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(2, 18, 2, 8),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.white),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textDark),
       ),
     );
   }
@@ -316,7 +320,7 @@ class StarBar extends StatelessWidget {
         for (int i = 0; i < total; i++)
           Icon(
             i < stars ? Icons.star_rounded : Icons.star_outline_rounded,
-            color: i < stars ? AppColors.sunYellow : AppColors.white.withValues(alpha: 0.35),
+            color: i < stars ? AppColors.sunYellow : AppColors.textDark.withValues(alpha: 0.25),
             size: size,
           ),
       ],
@@ -560,4 +564,69 @@ class _ConfettiPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ConfettiPainter oldDelegate) => true;
+}
+
+/// Slowly drifting mini planets in the background (kid-delight layer).
+class BgDrifters extends StatefulWidget {
+  const BgDrifters({super.key});
+
+  @override
+  State<BgDrifters> createState() => _BgDriftersState();
+}
+
+class _DriftSpec {
+  const _DriftSpec(this.x, this.y, this.size, this.planet, this.speed, this.phase);
+
+  final double x;
+  final double y;
+  final double size;
+  final int planet;
+  final double speed;
+  final double phase;
+}
+
+class _BgDriftersState extends State<BgDrifters> with SingleTickerProviderStateMixin {
+  static const List<_DriftSpec> _specs = <_DriftSpec>[
+    _DriftSpec(0.10, 0.18, 64, 0, 1.0, 0.0),
+    _DriftSpec(0.78, 0.62, 84, 4, 0.7, 2.1),
+    _DriftSpec(0.60, 0.85, 48, 5, 1.3, 4.2),
+  ];
+
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 30),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints cc) {
+        return AnimatedBuilder(
+          animation: _c,
+          builder: (BuildContext context, Widget? child) {
+            final double t = _c.value * 6.283;
+            return Stack(
+              children: <Widget>[
+                for (final _DriftSpec s in _specs)
+                  Positioned(
+                    left: s.x * cc.maxWidth + math.sin(t * s.speed + s.phase) * 22,
+                    top: s.y * cc.maxHeight + math.cos(t * s.speed + s.phase) * 16,
+                    child: Opacity(
+                      opacity: 0.35,
+                      child: Image.asset(A.planet(s.planet), width: s.size, height: s.size),
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 }

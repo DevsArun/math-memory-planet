@@ -105,6 +105,7 @@ class _SequenceGameState extends State<SequenceGame> {
               ChipPill(emoji: _inputEnabled ? '👆' : '👀', text: _inputEnabled ? S.t('yourTurn') : S.t('watch')),
               ChipPill(emoji: '🧠', text: '$_inputIndex/$total'),
               ChipPill(emoji: '❌', text: '${S.t('mistakes')}: $_mistakes'),
+              if (_inputEnabled) GestureDetector(onTap: _showSequence, child: ChipPill(emoji: '🔁', text: S.t('watchAgain'))),
             ],
           ),
         ),
@@ -132,10 +133,10 @@ class _SequenceGameState extends State<SequenceGame> {
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
                               decoration: BoxDecoration(
-                                color: _flash == i ? AppColors.sunYellow : AppColors.white.withValues(alpha: 0.14),
+                                color: _flash == i ? AppColors.sunYellow : AppColors.textDark.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: _flash == i ? AppColors.sunYellow : AppColors.white.withValues(alpha: 0.25),
+                                  color: _flash == i ? AppColors.sunYellow : AppColors.textDark.withValues(alpha: 0.25),
                                   width: 3,
                                 ),
                                 boxShadow: _flash == i

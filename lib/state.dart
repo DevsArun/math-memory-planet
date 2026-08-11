@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'models.dart';
 
 /// Shown in the About dialog. Keep in sync with pubspec.yaml version.
-const String kAppVersion = '1.2.1+5';
+const String kAppVersion = '1.4.0+7';
 
 /// A collectible trophy badge.
 class BadgeDef {
@@ -30,10 +30,10 @@ class AppState extends ChangeNotifier {
   static const List<int> cardBackCost = <int>[0, 15, 30, 50, 80, 120];
 
   static const List<List<int>> themes = <List<int>>[
-    <int>[0xFF241B4D, 0xFF3D2C8D],
-    <int>[0xFF0B2447, 0xFF19376D],
-    <int>[0xFF3B185F, 0xFFC060A1],
-    <int>[0xFF14532D, 0xFF166534],
+    <int>[0xFFFDF6EC, 0xFFDCEFFF],
+    <int>[0xFFFFF0F6, 0xFFFFD9EC],
+    <int>[0xFFEFFFF9, 0xFFD3F5FF],
+    <int>[0xFFFFFBE6, 0xFFE7F9D4],
   ];
   static const List<int> themeCost = <int>[0, 40, 90, 150];
 

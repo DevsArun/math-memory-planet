@@ -131,7 +131,7 @@ class _GateDialogState extends State<_GateDialog> with SingleTickerProviderState
                       onTap: () => _pick(v),
                       child: Text(
                         '$v',
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.white),
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.textDark),
                       ),
                     ),
                 ],
@@ -163,13 +163,13 @@ class _Header extends StatelessWidget {
       child: Row(
         children: <Widget>[
           IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.white, size: 32),
+            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textDark, size: 32),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.white),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.textDark),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -192,7 +192,7 @@ class _SettingTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: ChunkyButton(
-        color: AppColors.white.withValues(alpha: 0.14),
+        color: AppColors.textDark.withValues(alpha: 0.06),
         minHeight: 60,
         radius: 18,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -205,12 +205,12 @@ class _SettingTile extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.white),
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textDark),
                   ),
                   if (subtitle != null)
                     Text(
                       subtitle!,
-                      style: TextStyle(fontSize: 13, color: AppColors.white.withValues(alpha: 0.7)),
+                      style: TextStyle(fontSize: 13, color: AppColors.textDark.withValues(alpha: 0.7)),
                     ),
                 ],
               ),
@@ -327,7 +327,7 @@ class SettingsScreen extends StatelessWidget {
                     SectionTitle(text: S.t('statsTitle')),
                     _SettingTile(
                       title: S.t('statsTitle'),
-                      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.white),
+                      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textDark),
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(builder: (_) => const StatsScreen()),
@@ -337,7 +337,7 @@ class SettingsScreen extends StatelessWidget {
                     SectionTitle(text: S.t('privacy')),
                     _SettingTile(
                       title: S.t('privacy'),
-                      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.white),
+                      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textDark),
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(builder: (_) => const PrivacyPage()),
@@ -378,7 +378,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.14),
+        color: AppColors.textDark.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -390,12 +390,12 @@ class _StatCard extends StatelessWidget {
             fit: BoxFit.scaleDown,
             child: Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.white),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textDark),
             ),
           ),
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: AppColors.white.withValues(alpha: 0.75)),
+            style: TextStyle(fontSize: 12, color: AppColors.textDark.withValues(alpha: 0.75)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -447,7 +447,7 @@ class StatsScreen extends StatelessWidget {
                     title: '${kModes[i].emoji} ${S.t(kModes[i].titleKey)}',
                     trailing: Text(
                       '${appState.modePlays[i] ?? 0} 🎮  ${appState.starsForMode(i)}/90 ⭐',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.white),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textDark),
                     ),
                   ),
               ],
@@ -470,10 +470,10 @@ class _BadgeTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: unlocked ? AppColors.cardFace : AppColors.white.withValues(alpha: 0.10),
+        color: unlocked ? AppColors.cardFace : AppColors.textDark.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: unlocked ? AppColors.sunYellow : AppColors.white.withValues(alpha: 0.2),
+          color: unlocked ? AppColors.sunYellow : AppColors.textDark.withValues(alpha: 0.2),
           width: 2,
         ),
       ),
@@ -490,7 +490,7 @@ class _BadgeTile extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              color: unlocked ? AppColors.textDark : AppColors.white.withValues(alpha: 0.6),
+              color: unlocked ? AppColors.textDark : AppColors.textDark.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -517,7 +517,7 @@ class _RewardOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChunkyButton(
-      color: selected ? AppColors.sunYellow : AppColors.white.withValues(alpha: 0.14),
+      color: selected ? AppColors.sunYellow : AppColors.textDark.withValues(alpha: 0.06),
       minHeight: 0,
       radius: 18,
       padding: const EdgeInsets.all(8),
@@ -537,7 +537,7 @@ class _RewardOption extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              color: selected ? AppColors.textDark : AppColors.white,
+              color: selected ? AppColors.textDark : AppColors.textDark,
             ),
           ),
         ],

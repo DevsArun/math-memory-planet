@@ -39,6 +39,23 @@ class _OrderGameState extends State<OrderGame> {
     });
   }
 
+  void _peek() {
+    if (_preview) {
+      return;
+    }
+    Sfx.play('flip');
+    setState(() {
+      _preview = true;
+      _mistakes++;
+    });
+    Future<void>.delayed(const Duration(milliseconds: 1200), () {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _preview = false);
+    });
+  }
+
   void _tap(int i) {
     if (_preview || _up[i]) {
       return;
@@ -85,6 +102,7 @@ class _OrderGameState extends State<OrderGame> {
               ChipPill(emoji: _preview ? '👀' : '📈', text: _preview ? S.t('watch') : S.t('yourTurn')),
               ChipPill(emoji: '✅', text: '$_next/${_sorted.length}'),
               ChipPill(emoji: '❌', text: '${S.t('mistakes')}: $_mistakes'),
+              if (!_preview) GestureDetector(onTap: _peek, child: ChipPill(emoji: '👀', text: S.t('peek'))),
             ],
           ),
         ),

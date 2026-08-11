@@ -43,6 +43,23 @@ class _BuilderGameState extends State<BuilderGame> {
     return widget.level.cards.firstWhere((CardItem c) => c.pairId == pairId).label;
   }
 
+  void _peek() {
+    if (_preview) {
+      return;
+    }
+    Sfx.play('flip');
+    setState(() {
+      _preview = true;
+      _mistakes++;
+    });
+    Future<void>.delayed(const Duration(milliseconds: 1200), () {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _preview = false);
+    });
+  }
+
   void _tap(int i) {
     if (_preview || _used[i]) {
       return;
@@ -89,6 +106,7 @@ class _BuilderGameState extends State<BuilderGame> {
             children: <Widget>[
               ChipPill(emoji: _preview ? '👀' : '🧩', text: _preview ? S.t('watch') : S.t('yourTurn')),
               ChipPill(emoji: '❌', text: '${S.t('mistakes')}: $_mistakes'),
+              if (!_preview) GestureDetector(onTap: _peek, child: ChipPill(emoji: '👀', text: S.t('peek'))),
             ],
           ),
         ),
@@ -103,10 +121,10 @@ class _BuilderGameState extends State<BuilderGame> {
                   height: 56,
                   margin: const EdgeInsets.symmetric(horizontal: 5),
                   decoration: BoxDecoration(
-                    color: k < _step ? AppColors.mint.withValues(alpha: 0.25) : AppColors.white.withValues(alpha: 0.12),
+                    color: k < _step ? AppColors.mint.withValues(alpha: 0.25) : AppColors.textDark.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: k < _step ? AppColors.mint : AppColors.white.withValues(alpha: 0.3),
+                      color: k < _step ? AppColors.mint : AppColors.textDark.withValues(alpha: 0.3),
                       width: 2,
                     ),
                   ),
@@ -117,7 +135,7 @@ class _BuilderGameState extends State<BuilderGame> {
                         padding: const EdgeInsets.all(6),
                         child: Text(
                           k < _step ? _labelFor(k) : '?',
-                          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: AppColors.white),
+                          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: AppColors.textDark),
                         ),
                       ),
                     ),

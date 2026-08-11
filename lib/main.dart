@@ -33,7 +33,7 @@ class MMPApp extends StatelessWidget {
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFF6C4FD8),
-              brightness: Brightness.dark,
+              brightness: Brightness.light,
             ),
             useMaterial3: true,
           ),
@@ -60,10 +60,11 @@ class HomeScreen extends StatelessWidget {
     final List<int> daily = dailyLevelFor(DateTime.now());
     final ModeInfo dailyMode = kModes[daily[0]];
     return GradientScaffold(
-      child: Column(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Row(
               children: <Widget>[
                 const Mascot(size: 58),
@@ -74,13 +75,13 @@ class HomeScreen extends StatelessWidget {
                     children: <Widget>[
                       Text(
                         appState.childName.isEmpty ? S.t('appTitle') : '${S.t('hi')}, ${appState.childName}!',
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.white),
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.textDark),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         S.t('choosePlanet'),
-                        style: TextStyle(fontSize: 14, color: AppColors.white.withValues(alpha: 0.8)),
+                        style: TextStyle(fontSize: 14, color: AppColors.textDark.withValues(alpha: 0.8)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -150,9 +151,10 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            child: GridView(
-              padding: const EdgeInsets.all(16),
+          GridView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 340,
                 childAspectRatio: 1.55,
@@ -163,7 +165,6 @@ class HomeScreen extends StatelessWidget {
                 for (int i = 0; i < kModes.length; i++) ModeCard(modeIndex: i),
               ],
             ),
-          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: ChunkyButton(
@@ -186,6 +187,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -208,10 +210,10 @@ class _RoundIconButton extends StatelessWidget {
         width: 52,
         height: 52,
         decoration: BoxDecoration(
-          color: AppColors.white.withValues(alpha: 0.16),
+          color: AppColors.textDark.withValues(alpha: 0.08),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: AppColors.white, size: 28),
+        child: Icon(icon, color: AppColors.textDark, size: 28),
       ),
     );
   }
@@ -237,7 +239,7 @@ class ModeCard extends StatelessWidget {
         );
       },
       child: ChunkyButton(
-        color: AppColors.cardFace,
+        color: Colors.white,
         padding: const EdgeInsets.all(14),
       minHeight: 0,
       onTap: () {

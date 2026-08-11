@@ -71,7 +71,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
             child: Row(
               children: <Widget>[
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, color: AppColors.white, size: 32),
+                  icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textDark, size: 32),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 Text(mode.emoji, style: const TextStyle(fontSize: 32)),
@@ -79,13 +79,13 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                 Expanded(
                   child: Text(
                     S.t(mode.titleKey),
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.white),
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.textDark),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 ChipPill(emoji: '⭐', text: '${appState.starsForMode(widget.modeIndex)}/90'),
                 IconButton(
-                  icon: const Icon(Icons.help_outline_rounded, color: AppColors.white, size: 30),
+                  icon: const Icon(Icons.help_outline_rounded, color: AppColors.textDark, size: 30),
                   onPressed: () {
                     showDialog<void>(
                       context: context,
@@ -112,7 +112,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 S.t(mode.hintKey),
-                style: TextStyle(fontSize: 16, color: AppColors.white.withValues(alpha: 0.85)),
+                style: TextStyle(fontSize: 16, color: AppColors.textDark.withValues(alpha: 0.85)),
               ),
             ),
           ),
@@ -191,7 +191,7 @@ class _PathPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.18)
+      ..color = AppColors.textDark.withValues(alpha: 0.12)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10
       ..strokeCap = StrokeCap.round;
@@ -260,13 +260,13 @@ class _LevelNodeState extends State<_LevelNode> with SingleTickerProviderStateMi
       height: 72,
       decoration: BoxDecoration(
         color: !widget.unlocked
-            ? AppColors.white.withValues(alpha: 0.16)
+            ? AppColors.textDark.withValues(alpha: 0.08)
             : done
                 ? widget.color
-                : AppColors.cardFace,
+                : Colors.white,
         shape: BoxShape.circle,
         border: Border.all(
-          color: widget.unlocked ? widget.color : AppColors.white.withValues(alpha: 0.3),
+          color: widget.unlocked ? widget.color : AppColors.textDark.withValues(alpha: 0.3),
           width: 4,
         ),
         boxShadow: widget.isCurrent
@@ -275,9 +275,9 @@ class _LevelNodeState extends State<_LevelNode> with SingleTickerProviderStateMi
       ),
       child: Center(
         child: !widget.unlocked
-            ? Icon(Icons.lock_rounded, color: AppColors.white.withValues(alpha: 0.55), size: 28)
+            ? Icon(Icons.lock_rounded, color: AppColors.textDark.withValues(alpha: 0.55), size: 28)
             : done
-                ? const Icon(Icons.check_rounded, color: AppColors.white, size: 34)
+                ? const Icon(Icons.check_rounded, color: AppColors.textDark, size: 34)
                 : Text(
                     '${widget.number}',
                     style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: widget.color),
@@ -333,12 +333,12 @@ class GuideView extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 S.t('howTo'),
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.white),
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.textDark),
               ),
               const SizedBox(height: 4),
               Text(
                 '${mode.emoji} ${S.t(mode.titleKey)}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.white.withValues(alpha: 0.85)),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textDark.withValues(alpha: 0.85)),
               ),
               const SizedBox(height: 18),
               for (int i = 0; i < steps.length; i++)
@@ -549,7 +549,7 @@ class _GameScreenState extends State<GameScreen> {
             child: Row(
               children: <Widget>[
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, color: AppColors.white, size: 32),
+                  icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textDark, size: 32),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 Text(mode.emoji, style: const TextStyle(fontSize: 28)),
@@ -557,15 +557,15 @@ class _GameScreenState extends State<GameScreen> {
                 Expanded(
                   child: Text(
                     '${S.t('level')} ${widget.levelIndex + 1}',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.white),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.textDark),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.help_outline_rounded, color: AppColors.white, size: 30),
+                  icon: const Icon(Icons.help_outline_rounded, color: AppColors.textDark, size: 30),
                   onPressed: () => _showGuideDialog(context),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.refresh_rounded, color: AppColors.white, size: 30),
+                  icon: const Icon(Icons.refresh_rounded, color: AppColors.textDark, size: 30),
                   onPressed: _replay,
                 ),
               ],
@@ -597,14 +597,15 @@ class _GameScreenState extends State<GameScreen> {
                     child: Container(
                       color: Color(AppState.themes[appState.theme][1]),
                       child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            const Mascot(size: 110),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              const Mascot(size: 110),
                             const SizedBox(height: 14),
                             Text(
                               '${S.t('level')} ${widget.levelIndex + 1}',
-                              style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: AppColors.white),
+                              style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: AppColors.textDark),
                             ),
                             const SizedBox(height: 10),
                             Padding(
@@ -614,9 +615,10 @@ class _GameScreenState extends State<GameScreen> {
                             const SizedBox(height: 12),
                             Text(
                               S.t('ready'),
-                              style: TextStyle(fontSize: 18, color: AppColors.white.withValues(alpha: 0.75)),
+                              style: TextStyle(fontSize: 18, color: AppColors.textDark.withValues(alpha: 0.75)),
                             ),
                           ],
+                          ),
                         ),
                       ),
                     ),
@@ -708,9 +710,10 @@ class _WinDialogState extends State<WinDialog> with SingleTickerProviderStateMix
                 BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 10)),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
                 const Mascot(size: 92),
                 const SizedBox(height: 6),
                 Text(
@@ -751,6 +754,7 @@ class _WinDialogState extends State<WinDialog> with SingleTickerProviderStateMix
                   ],
                 ),
               ],
+              ),
             ),
           ),
         ],

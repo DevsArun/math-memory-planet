@@ -48,11 +48,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 14),
         Text(
           S.t('ob_welcome'),
-          style: TextStyle(fontSize: 20, color: AppColors.white.withValues(alpha: 0.85)),
+          style: TextStyle(fontSize: 20, color: AppColors.textDark.withValues(alpha: 0.85)),
         ),
         Text(
           S.t('appTitle'),
-          style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: AppColors.white),
+          style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: AppColors.textDark),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 22),
@@ -63,7 +63,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: <Widget>[
             for (final String code in S.codes)
               ChunkyButton(
-                color: appState.locale == code ? AppColors.mint : AppColors.white.withValues(alpha: 0.16),
+                color: appState.locale == code ? AppColors.mint : AppColors.textDark.withValues(alpha: 0.08),
                 minHeight: 46,
                 radius: 16,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -77,7 +77,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: appState.locale == code ? AppColors.textDark : AppColors.white,
+                    color: appState.locale == code ? AppColors.textDark : AppColors.textDark,
                   ),
                 ),
               ),
@@ -103,7 +103,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 14),
         Text(
           S.t('ob_name'),
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.white),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textDark),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
@@ -129,12 +129,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             ChunkyButton(
-              color: AppColors.white.withValues(alpha: 0.2),
+              color: AppColors.textDark.withValues(alpha: 0.1),
               minHeight: 60,
               onTap: () => _finish(''),
               child: Text(
                 S.t('ob_skip'),
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.white),
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textDark),
               ),
             ),
             const SizedBox(width: 12),

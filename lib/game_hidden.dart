@@ -39,6 +39,23 @@ class _HiddenGameState extends State<HiddenGame> {
     });
   }
 
+  void _peek() {
+    if (_preview) {
+      return;
+    }
+    Sfx.play('flip');
+    setState(() {
+      _preview = true;
+      _mistakes++;
+    });
+    Future<void>.delayed(const Duration(milliseconds: 1200), () {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _preview = false);
+    });
+  }
+
   void _tap(int i) {
     if (_preview || _found[i]) {
       return;
@@ -90,6 +107,7 @@ class _HiddenGameState extends State<HiddenGame> {
               else if (!done)
                 ChipPill(emoji: '🔍', text: '${S.t('find')} $shownTarget'),
               ChipPill(emoji: '❌', text: '${S.t('mistakes')}: $_mistakes'),
+              if (!_preview && !done) GestureDetector(onTap: _peek, child: ChipPill(emoji: '👀', text: S.t('peek'))),
             ],
           ),
         ),
