@@ -299,3 +299,21 @@ List<int> dailyLevelFor(DateTime now) {
   final int doy = now.difference(DateTime(now.year, 1, 1)).inDays;
   return <int>[doy % kModes.length, (doy ~/ kModes.length) % 30];
 }
+
+/// Kid-friendly 3-step guide for a mode (big emoji + tiny localized text).
+class GuideStep {
+  const GuideStep(this.emoji, this.textKey);
+
+  final String emoji;
+  final String textKey;
+}
+
+const Map<GameMode, List<GuideStep>> kGuides = <GameMode, List<GuideStep>>{
+  GameMode.pairs: <GuideStep>[GuideStep('👆', 'g_pairs_1'), GuideStep('🧠', 'g_pairs_2'), GuideStep('🪐', 'g_pairs_3')],
+  GameMode.eqMatch: <GuideStep>[GuideStep('👆', 'g_eqmatch_1'), GuideStep('➕', 'g_eqmatch_2'), GuideStep('🎯', 'g_eqmatch_3')],
+  GameMode.sequence: <GuideStep>[GuideStep('👀', 'g_sequence_1'), GuideStep('🧠', 'g_sequence_2'), GuideStep('🚀', 'g_sequence_3')],
+  GameMode.hidden: <GuideStep>[GuideStep('👀', 'g_hidden_1'), GuideStep('🙈', 'g_hidden_2'), GuideStep('🔍', 'g_hidden_3')],
+  GameMode.targetSum: <GuideStep>[GuideStep('🎯', 'g_target_1'), GuideStep('👆', 'g_target_2'), GuideStep('➕', 'g_target_3')],
+  GameMode.order: <GuideStep>[GuideStep('🧠', 'g_order_1'), GuideStep('🙈', 'g_order_2'), GuideStep('📈', 'g_order_3')],
+  GameMode.builder: <GuideStep>[GuideStep('👀', 'g_builder_1'), GuideStep('🧠', 'g_builder_2'), GuideStep('🧩', 'g_builder_3')],
+};

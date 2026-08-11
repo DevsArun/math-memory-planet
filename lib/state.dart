@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'models.dart';
 
 /// Shown in the About dialog. Keep in sync with pubspec.yaml version.
-const String kAppVersion = '1.2.0+4';
+const String kAppVersion = '1.2.1+5';
 
 /// A collectible trophy badge.
 class BadgeDef {
@@ -73,6 +73,7 @@ class AppState extends ChangeNotifier {
   final Map<String, int> stars = <String, int>{};
   final Map<int, int> modePlays = <int, int>{};
   final Set<String> badges = <String>{};
+  final Set<String> guidesSeen = <String>{};
 
   Future<void> load() async {
     _p = await SharedPreferences.getInstance();
@@ -90,6 +91,7 @@ class AppState extends ChangeNotifier {
     childName = _p.getString('childName') ?? '';
     onboardingDone = _p.getBool('onboardingDone') ?? false;
     badges.addAll(_p.getStringList('badges') ?? <String>[]);
+    guidesSeen.addAll(_p.getStringList('guidesSeen') ?? <String>[]);
     for (final String key in _p.getKeys()) {
       if (key.startsWith('s_')) {
         stars[key.substring(2)] = _p.getInt(key) ?? 0;
@@ -195,6 +197,13 @@ class AppState extends ChangeNotifier {
   static String _day(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+  bool guideSeen(int mode) => guidesSeen.contains('$mode');
+
+  void markGuideSeen(int mode) {
+    guidesSeen.add('$mode');
+    _p.setStringList('guidesSeen', guidesSeen.toList());
+  }
+
   void completeOnboarding(String name) {
     childName = name.trim();
     onboardingDone = true;
@@ -237,6 +246,7 @@ class AppState extends ChangeNotifier {
     stars.clear();
     modePlays.clear();
     badges.clear();
+    guidesSeen.clear();
     streak = 0;
     lastDay = '';
     gamesPlayed = 0;

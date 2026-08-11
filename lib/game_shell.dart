@@ -84,6 +84,25 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                   ),
                 ),
                 ChipPill(emoji: '⭐', text: '${appState.starsForMode(widget.modeIndex)}/90'),
+                IconButton(
+                  icon: const Icon(Icons.help_outline_rounded, color: AppColors.white, size: 30),
+                  onPressed: () {
+                    showDialog<void>(
+                      context: context,
+                      builder: (BuildContext dialogContext) => Dialog(
+                        backgroundColor: Colors.transparent,
+                        insetPadding: const EdgeInsets.all(12),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: GuideView(
+                            modeIndex: widget.modeIndex,
+                            onDone: () => Navigator.of(dialogContext).pop(),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -291,6 +310,94 @@ class _LevelNodeState extends State<_LevelNode> with SingleTickerProviderStateMi
   }
 }
 
+/// Full kid-friendly "how to play" guide: Nova + 3 big-emoji steps + Play button.
+class GuideView extends StatelessWidget {
+  const GuideView({super.key, required this.modeIndex, required this.onDone});
+
+  final int modeIndex;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final ModeInfo mode = kModes[modeIndex];
+    final List<GuideStep> steps = kGuides[mode.mode] ?? kGuides[GameMode.pairs]!;
+    return Container(
+      color: Color(AppState.themes[appState.theme][1]),
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Mascot(size: 100),
+              const SizedBox(height: 8),
+              Text(
+                S.t('howTo'),
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.white),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${mode.emoji} ${S.t(mode.titleKey)}',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.white.withValues(alpha: 0.85)),
+              ),
+              const SizedBox(height: 18),
+              for (int i = 0; i < steps.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardFace,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: Color(mode.color).withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(child: Text(steps[i].emoji, style: const TextStyle(fontSize: 30))),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            S.t(steps[i].textKey),
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              ChunkyButton(
+                color: AppColors.mint,
+                gradient: const LinearGradient(colors: <Color>[Color(0xFF4ECDC4), Color(0xFF45B7FF)]),
+                onTap: onDone,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    const Icon(Icons.play_arrow_rounded, color: AppColors.textDark, size: 30),
+                    const SizedBox(width: 6),
+                    Text(
+                      S.t('play'),
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.textDark),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Hosts one level: header + level-start splash + game widget + win flow.
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key, required this.modeIndex, required this.levelIndex});
@@ -307,12 +414,17 @@ class _GameScreenState extends State<GameScreen> {
   late DateTime _start;
   bool _won = false;
   bool _started = false;
+  bool _showGuide = false;
 
   @override
   void initState() {
     super.initState();
     _start = DateTime.now();
-    _armSplash();
+    if (appState.guideSeen(widget.modeIndex)) {
+      _armSplash();
+    } else {
+      _showGuide = true;
+    }
   }
 
   void _armSplash() {
@@ -383,6 +495,23 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  void _showGuideDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: GuideView(
+            modeIndex: widget.modeIndex,
+            onDone: () => Navigator.of(dialogContext).pop(),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _replay() {
     setState(() {
       _won = false;
@@ -432,6 +561,10 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                 ),
                 IconButton(
+                  icon: const Icon(Icons.help_outline_rounded, color: AppColors.white, size: 30),
+                  onPressed: () => _showGuideDialog(context),
+                ),
+                IconButton(
                   icon: const Icon(Icons.refresh_rounded, color: AppColors.white, size: 30),
                   onPressed: _replay,
                 ),
@@ -448,6 +581,17 @@ class _GameScreenState extends State<GameScreen> {
                   )
                 else
                   const SizedBox.shrink(),
+                if (_showGuide)
+                  Positioned.fill(
+                    child: GuideView(
+                      modeIndex: widget.modeIndex,
+                      onDone: () {
+                        appState.markGuideSeen(widget.modeIndex);
+                        setState(() => _showGuide = false);
+                        _armSplash();
+                      },
+                    ),
+                  ),
                 if (!_started)
                   Positioned.fill(
                     child: Container(
