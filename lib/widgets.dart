@@ -187,6 +187,7 @@ class ChunkyButton extends StatefulWidget {
     required this.onTap,
     required this.child,
     this.color = AppColors.sunYellow,
+    this.gradient,
     this.radius = 24,
     this.minHeight = 72,
     this.padding,
@@ -195,6 +196,7 @@ class ChunkyButton extends StatefulWidget {
   final VoidCallback onTap;
   final Widget child;
   final Color color;
+  final Gradient? gradient;
   final double radius;
   final double minHeight;
   final EdgeInsets? padding;
@@ -226,12 +228,15 @@ class _ChunkyButtonState extends State<ChunkyButton> {
       child: AnimatedScale(
         scale: _down ? 0.93 : 1.0,
         duration: const Duration(milliseconds: 120),
-        child: Container(
-          constraints: BoxConstraints(minHeight: widget.minHeight),
+        child: Transform.translate(
+          offset: Offset(0, _down ? 3.0 : 0.0),
+          child: Container(
+            constraints: BoxConstraints(minHeight: widget.minHeight),
           padding: widget.padding ?? const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          decoration: BoxDecoration(
-            color: widget.color,
-            borderRadius: BorderRadius.circular(widget.radius),
+            decoration: BoxDecoration(
+              color: widget.gradient == null ? widget.color : null,
+              gradient: widget.gradient,
+              borderRadius: BorderRadius.circular(widget.radius),
             boxShadow: <BoxShadow>[
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.25),
@@ -240,7 +245,8 @@ class _ChunkyButtonState extends State<ChunkyButton> {
               ),
             ],
           ),
-          child: Center(widthFactor: 1, child: widget.child),
+            child: Center(widthFactor: 1, child: widget.child),
+          ),
         ),
       ),
     );
@@ -375,7 +381,11 @@ class _CardFace extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardFace,
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[Color(0xFFFFFFFF), Color(0xFFFFF1DC)],
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: matched ? AppColors.mint : accent, width: matched ? 4 : 3),
         boxShadow: <BoxShadow>[

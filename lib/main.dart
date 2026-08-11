@@ -110,6 +110,7 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             child: ChunkyButton(
               color: AppColors.lavender,
+              gradient: const LinearGradient(colors: <Color>[Color(0xFFB9A7F9), Color(0xFFFFB3E2)]),
               minHeight: 64,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               onTap: () {
@@ -167,6 +168,7 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: ChunkyButton(
               color: AppColors.mint,
+              gradient: const LinearGradient(colors: <Color>[Color(0xFF4ECDC4), Color(0xFF45B7FF)]),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const RewardsScreen()));
               },
@@ -224,9 +226,19 @@ class ModeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ModeInfo mode = kModes[modeIndex];
     final int earned = appState.starsForMode(modeIndex);
-    return ChunkyButton(
-      color: AppColors.cardFace,
-      padding: const EdgeInsets.all(14),
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: Duration(milliseconds: 320 + modeIndex * 70),
+      curve: Curves.easeOutCubic,
+      builder: (BuildContext context, double v, Widget? child) {
+        return Opacity(
+          opacity: v,
+          child: Transform.translate(offset: Offset(0, 26 * (1 - v)), child: child),
+        );
+      },
+      child: ChunkyButton(
+        color: AppColors.cardFace,
+        padding: const EdgeInsets.all(14),
       minHeight: 0,
       onTap: () {
         Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => LevelSelectScreen(modeIndex: modeIndex)));
@@ -279,7 +291,8 @@ class ModeCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
+          ),
+        ),
     );
   }
 }

@@ -16,21 +16,53 @@ import 'strings.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Winding galaxy-path level map (Candy-Crush style) for one mode.
-class LevelSelectScreen extends StatelessWidget {
+/// Winding galaxy-path level map (Candy-Crush style), TOP -> BOTTOM:
+/// level 1 at the top, level 30 at the bottom. Auto-scrolls to current level.
+class LevelSelectScreen extends StatefulWidget {
   const LevelSelectScreen({super.key, required this.modeIndex});
 
   final int modeIndex;
 
-  static const double _spacing = 112;
+  static const double spacing = 112;
+
+  @override
+  State<LevelSelectScreen> createState() => _LevelSelectScreenState();
+}
+
+class _LevelSelectScreenState extends State<LevelSelectScreen> {
+  final ScrollController _sc = ScrollController();
+  late final int _current = _computeCurrent();
+
+  int _computeCurrent() {
+    int c = 0;
+    while (c < 29 && appState.starsFor(widget.modeIndex, c) > 0) {
+      c++;
+    }
+    return c;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_sc.hasClients) {
+        return;
+      }
+      final double target = 90 + _current * LevelSelectScreen.spacing - 220;
+      final double maxScroll = _sc.position.maxScrollExtent;
+      _sc.jumpTo(math.max(0, math.min(target, maxScroll)));
+    });
+  }
+
+  @override
+  void dispose() {
+    _sc.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final ModeInfo mode = kModes[modeIndex];
-    int current = 0;
-    while (current < 29 && appState.starsFor(modeIndex, current) > 0) {
-      current++;
-    }
+    final ModeInfo mode = kModes[widget.modeIndex];
     return GradientScaffold(
       child: Column(
         children: <Widget>[
@@ -51,7 +83,7 @@ class LevelSelectScreen extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                ChipPill(emoji: '⭐', text: '${appState.starsForMode(modeIndex)}/90'),
+                ChipPill(emoji: '⭐', text: '${appState.starsForMode(widget.modeIndex)}/90'),
               ],
             ),
           ),
@@ -68,9 +100,10 @@ class LevelSelectScreen extends StatelessWidget {
           Expanded(
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints c) {
-                const double spacing = _spacing;
-                final double height = 30 * spacing + 140;
+                const double spacing = LevelSelectScreen.spacing;
+                final double height = 30 * spacing + 160;
                 return SingleChildScrollView(
+                  controller: _sc,
                   padding: EdgeInsets.zero,
                   child: SizedBox(
                     width: c.maxWidth,
@@ -78,10 +111,10 @@ class LevelSelectScreen extends StatelessWidget {
                     child: Stack(
                       children: <Widget>[
                         Positioned.fill(
-                          child: CustomPaint(painter: _PathPainter(c.maxWidth, spacing, height)),
+                          child: CustomPaint(painter: _PathPainter(c.maxWidth, spacing)),
                         ),
                         for (int level = 0; level < 30; level++)
-                          _buildNode(context, mode, level, current, c.maxWidth, spacing, height),
+                          _buildNode(context, mode, level, c.maxWidth, spacing),
                       ],
                     ),
                   ),
@@ -94,30 +127,25 @@ class LevelSelectScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNode(
-    BuildContext context,
-    ModeInfo mode,
-    int level,
-    int current,
-    double width,
-    double spacing,
-    double height,
-  ) {
-    final Offset pos = _nodePos(width, spacing, level, height);
-    final bool unlocked = appState.levelUnlocked(modeIndex, level);
+  Widget _buildNode(BuildContext context, ModeInfo mode, int level, double width, double spacing) {
+    final Offset pos = _nodePos(width, spacing, level);
+    final bool unlocked = appState.levelUnlocked(widget.modeIndex, level);
+    final int stars = appState.starsFor(widget.modeIndex, level);
     return Positioned(
       left: pos.dx - 36,
       top: pos.dy - 45,
       child: _LevelNode(
         number: level + 1,
-        stars: appState.starsFor(modeIndex, level),
+        stars: stars,
         unlocked: unlocked,
-        isCurrent: unlocked && level == current,
+        isCurrent: unlocked && level == _current,
         color: Color(mode.color),
         onTap: () {
           if (unlocked) {
             Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => GameScreen(modeIndex: modeIndex, levelIndex: level)),
+              MaterialPageRoute<void>(
+                builder: (_) => GameScreen(modeIndex: widget.modeIndex, levelIndex: level),
+              ),
             );
           } else {
             Sfx.play('wrong');
@@ -128,18 +156,18 @@ class LevelSelectScreen extends StatelessWidget {
   }
 }
 
-Offset _nodePos(double width, double spacing, int i, double height) {
+/// Top-down: level 1 near the top, level 30 at the bottom.
+Offset _nodePos(double width, double spacing, int i) {
   final double x = width / 2 + math.sin(i * 0.85) * (width * 0.26);
-  final double y = height - 90 - i * spacing;
+  final double y = 90 + i * spacing;
   return Offset(x, y);
 }
 
 class _PathPainter extends CustomPainter {
-  const _PathPainter(this.width, this.spacing, this.height);
+  const _PathPainter(this.width, this.spacing);
 
   final double width;
   final double spacing;
-  final double height;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -150,7 +178,7 @@ class _PathPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     final Path path = Path();
     for (int i = 0; i < 30; i++) {
-      final Offset p = _nodePos(width, spacing, i, height);
+      final Offset p = _nodePos(width, spacing, i);
       if (i == 0) {
         path.moveTo(p.dx, p.dy);
       } else {
@@ -207,27 +235,34 @@ class _LevelNodeState extends State<_LevelNode> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
+    final bool done = widget.stars > 0;
     final Widget circle = Container(
       width: 72,
       height: 72,
       decoration: BoxDecoration(
-        color: widget.unlocked ? AppColors.cardFace : AppColors.white.withValues(alpha: 0.16),
+        color: !widget.unlocked
+            ? AppColors.white.withValues(alpha: 0.16)
+            : done
+                ? widget.color
+                : AppColors.cardFace,
         shape: BoxShape.circle,
         border: Border.all(
           color: widget.unlocked ? widget.color : AppColors.white.withValues(alpha: 0.3),
           width: 4,
         ),
-        boxShadow: <BoxShadow>[
-          BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 4)),
-        ],
+        boxShadow: widget.isCurrent
+            ? <BoxShadow>[BoxShadow(color: widget.color.withValues(alpha: 0.8), blurRadius: 20)]
+            : <BoxShadow>[BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: Center(
-        child: widget.unlocked
-            ? Text(
-                '${widget.number}',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: widget.color),
-              )
-            : Icon(Icons.lock_rounded, color: AppColors.white.withValues(alpha: 0.55), size: 28),
+        child: !widget.unlocked
+            ? Icon(Icons.lock_rounded, color: AppColors.white.withValues(alpha: 0.55), size: 28)
+            : done
+                ? const Icon(Icons.check_rounded, color: AppColors.white, size: 34)
+                : Text(
+                    '${widget.number}',
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: widget.color),
+                  ),
       ),
     );
     return GestureDetector(
