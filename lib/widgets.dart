@@ -21,6 +21,7 @@ class GradientScaffold extends StatelessWidget {
     return Scaffold(
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
       body: Stack(
+        fit: StackFit.expand,
         children: <Widget>[
           Positioned.fill(
             child: DecoratedBox(
