@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'models.dart';
 
 /// Shown in the About dialog. Keep in sync with pubspec.yaml version.
-const String kAppVersion = '1.4.2+9';
+const String kAppVersion = '1.4.3+10';
 
 /// A collectible trophy badge.
 class BadgeDef {
