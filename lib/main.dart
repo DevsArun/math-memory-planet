@@ -60,9 +60,14 @@ class HomeScreen extends StatelessWidget {
     final List<int> daily = dailyLevelFor(DateTime.now());
     final ModeInfo dailyMode = kModes[daily[0]];
     return GradientScaffold(
-      child: SingleChildScrollView(
-        child: Column(
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints box) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: box.maxHeight, minWidth: box.maxWidth),
+          child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
+            Column(children: <Widget>[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Row(
@@ -151,6 +156,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
+            ]),
           GridView(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -187,6 +193,8 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ],
+          ),
+        ),
         ),
       ),
     );

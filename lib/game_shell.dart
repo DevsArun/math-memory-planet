@@ -323,9 +323,14 @@ class GuideView extends StatelessWidget {
     final List<GuideStep> steps = kGuides[mode.mode] ?? kGuides[GameMode.pairs]!;
     return Container(
       color: Color(AppState.themes[appState.theme][1]),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints box) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: box.maxHeight, minWidth: box.maxWidth),
+          child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             const Mascot(size: 100),
@@ -391,7 +396,10 @@ class GuideView extends StatelessWidget {
               ),
             ],
           ),
+          ),
         ),
+        ),
+      ),
     );
   }
 }
@@ -586,9 +594,12 @@ class _GameScreenState extends State<GameScreen> {
                       )
                     : Container(
                         color: Color(AppState.themes[appState.theme][1]),
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-                          child: Column(
+                        child: LayoutBuilder(
+                          builder: (BuildContext context, BoxConstraints box) => SingleChildScrollView(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(minHeight: box.maxHeight, minWidth: box.maxWidth),
+                            child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: <Widget>[
                               const Mascot(size: 110),
@@ -609,6 +620,8 @@ class _GameScreenState extends State<GameScreen> {
                               ),
                             ],
                           ),
+                          ),
+                        ),
                         ),
                       ),
           ),

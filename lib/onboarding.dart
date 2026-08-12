@@ -31,9 +31,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return GradientScaffold(
       resizeToAvoidBottomInset: true,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: _step == 0 ? _langStep() : _nameStep(),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints box) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: box.maxHeight, minWidth: box.maxWidth),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[_step == 0 ? _langStep() : _nameStep()],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
