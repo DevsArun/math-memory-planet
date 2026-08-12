@@ -1,7 +1,7 @@
 name: mathmemoryplanet
 description: "Math Memory Planet - kids memory and math card games. Fully offline, no ads, no accounts, no data collection."
 publish_to: "none"
-version: 1.4.0+7
+version: 1.4.2+9
 
 environment:
   sdk: ^3.7.0

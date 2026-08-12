@@ -31,11 +31,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return GradientScaffold(
       resizeToAvoidBottomInset: true,
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: _step == 0 ? _langStep() : _nameStep(),
-        ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: _step == 0 ? _langStep() : _nameStep(),
       ),
     );
   }

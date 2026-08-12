@@ -323,13 +323,12 @@ class GuideView extends StatelessWidget {
     final List<GuideStep> steps = kGuides[mode.mode] ?? kGuides[GameMode.pairs]!;
     return Container(
       color: Color(AppState.themes[appState.theme][1]),
-      padding: const EdgeInsets.all(20),
-      child: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Mascot(size: 100),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            const Mascot(size: 100),
               const SizedBox(height: 8),
               Text(
                 S.t('howTo'),
@@ -393,7 +392,6 @@ class GuideView extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }
@@ -572,59 +570,47 @@ class _GameScreenState extends State<GameScreen> {
             ),
           ),
           Expanded(
-            child: Stack(
-              children: <Widget>[
-                if (_started)
-                  KeyedSubtree(
-                    key: ValueKey<int>(_replayCount),
-                    child: _buildGame(mode, level),
+            child: _showGuide
+                ? GuideView(
+                    modeIndex: widget.modeIndex,
+                    onDone: () {
+                      appState.markGuideSeen(widget.modeIndex);
+                      setState(() => _showGuide = false);
+                      _armSplash();
+                    },
                   )
-                else
-                  const SizedBox.shrink(),
-                if (_showGuide)
-                  Positioned.fill(
-                    child: GuideView(
-                      modeIndex: widget.modeIndex,
-                      onDone: () {
-                        appState.markGuideSeen(widget.modeIndex);
-                        setState(() => _showGuide = false);
-                        _armSplash();
-                      },
-                    ),
-                  ),
-                if (!_started)
-                  Positioned.fill(
-                    child: Container(
-                      color: Color(AppState.themes[appState.theme][1]),
-                      child: Center(
+                : _started
+                    ? KeyedSubtree(
+                        key: ValueKey<int>(_replayCount),
+                        child: _buildGame(mode, level),
+                      )
+                    : Container(
+                        color: Color(AppState.themes[appState.theme][1]),
                         child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
                           child: Column(
-                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: <Widget>[
                               const Mascot(size: 110),
-                            const SizedBox(height: 14),
-                            Text(
-                              '${S.t('level')} ${widget.levelIndex + 1}',
-                              style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: AppColors.textDark),
-                            ),
-                            const SizedBox(height: 10),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 32),
-                              child: Bubble(text: S.t(mode.hintKey)),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              S.t('ready'),
-                              style: TextStyle(fontSize: 18, color: AppColors.textDark.withValues(alpha: 0.75)),
-                            ),
-                          ],
+                              const SizedBox(height: 14),
+                              Text(
+                                '${S.t('level')} ${widget.levelIndex + 1}',
+                                style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: AppColors.textDark),
+                              ),
+                              const SizedBox(height: 10),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 32),
+                                child: Bubble(text: S.t(mode.hintKey)),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                S.t('ready'),
+                                style: TextStyle(fontSize: 18, color: AppColors.textDark.withValues(alpha: 0.75)),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
-            ),
           ),
         ],
       ),
